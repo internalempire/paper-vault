@@ -1,0 +1,36 @@
+# Credenziali e configurazione personale
+.env
+.env.*
+!.env.example
+config.toml
+*.pem
+*.key
+
+# Runtime e cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+._*
+
+# Dati dell'utente e backup: non sono codice
+note/
+notes/
+files/
+assets/
+.json/
+.anteprime/
+.backup*/
+backup/
+backups/
+*.log
+
+# Corpus reale (le fixture sintetiche in tests/fixtures sono versionate)
+tests/corpus/*
+!tests/corpus/README.md
+
+# Installazioni server locali
+deploy/sites/
+deploy/note/

@@ -1,0 +1,146 @@
+{#- Frammenti condivisi dai due tipi di nota. La struttura riproduce i golden in tests/golden/.
+
+    Con `trim_blocks` una riga che finisce con un tag `{% ... %}` perde il proprio a capo:
+    i pezzi condizionali di una riga vanno quindi precalcolati con `{% set %}`, non appesi
+    in coda. Le righe vuote di troppo le toglie `_ripulisci()` in render.py. -#}
+
+{#- La testa della nota appartiene alla pipeline: titolo e riga di citazione. Il frontmatter
+    YAML non c'è più — flatnotes non lo interpreta e lo rendeva come un blocco in grassetto in
+    cima a ogni nota. I metadati completi restano nel JSON, che è la vera fonte. -#}
+{%- macro intestazione(nota, metadati) -%}
+# {{ nota.meta.titolo_nota }}
+
+{% set citazione = metadati.citazione_breve() %}
+{% if citazione %}
+*{{ citazione }}*
+
+{% endif %}
+{# La nota sui riferimenti serviva a dichiarare il criterio dei rimandi: senza rimandi, non
+   ha più niente da dichiarare. #}
+{% if mostra_riferimenti and nota.meta.nota_riferimenti %}
+> {{ nota.meta.nota_riferimenti }}
+{% endif %}
+{%- endmacro -%}
+
+{%- macro titolo(livello, testo, rif) -%}
+{% set coda = " (" ~ rif ~ ")" if rif and mostra_riferimenti else "" %}
+{{ "#" * livello }} {{ pulisci_riferimenti(testo) }}{{ coda }}
+{%- endmacro -%}
+
+{%- macro didascalia(testo) -%}
+{% set pulita = pulisci_riferimenti(testo) %}
+{% if pulita %}
+*({{ pulita }})*
+
+{% endif %}
+{%- endmacro -%}
+
+{%- macro elenco(voci) -%}
+{% for voce in voci %}
+- {{ pulisci_riferimenti(voce) }}
+{% endfor %}
+{%- endmacro -%}
+
+{%- macro dosaggi(nota) -%}
+## Dosaggi e soglie
+
+{% if nota.dosaggi %}
+{% if mostra_riferimenti %}
+| Ambito | Parametro | Valore | {{ colonna_riferimenti(nota.meta.criterio_riferimenti) }} |
+|---|---|---|---|
+{% for d in nota.dosaggi %}
+| {{ d.ambito or "" }} | {{ d.parametro }} | {{ senza_riferimento_ripetuto(d.valore, d.rif) }} | {{ senza_prefisso_pagina(d.rif) }} |
+{% endfor %}
+{% else %}
+| Ambito | Parametro | Valore |
+|---|---|---|
+{% for d in nota.dosaggi %}
+| {{ d.ambito or "" }} | {{ pulisci_riferimenti(d.parametro) }} | {{ senza_riferimento_ripetuto(d.valore, d.rif) }} |
+{% endfor %}
+{% endif %}
+{% else %}
+Nessun dosaggio o soglia operativa riportato nel documento.
+{% endif %}
+{%- endmacro -%}
+
+{#- Le sezioni del corpo si annidano; il livello parte da 2 e cresce con la profondità. -#}
+{%- macro sezioni(elenco_sezioni, livello, trappole) -%}
+{% for s in elenco_sezioni %}
+{{ titolo(livello, s.titolo, s.rif) }}
+
+{% if s.contenuto_md %}
+{{ pulisci_riferimenti(s.contenuto_md) }}
+
+{% endif %}
+{{ sezioni(s.sottosezioni or [], livello + 1, trappole) }}
+{% if trappole and trappole.dopo_sezione == s.titolo %}
+{{ blocco_trappole(trappole) }}
+
+{% endif %}
+{% endfor %}
+{%- endmacro -%}
+
+{%- macro blocco_trappole(trappole) -%}
+## {{ trappole.titolo or "Cosa non fare" }}
+
+{{ didascalia(trappole.nota) }}
+{% if trappole.voci|selectattr("approccio")|list|length == trappole.voci|length %}
+| Errore | Approccio preferibile e razionale |
+|---|---|
+{% for v in trappole.voci %}
+| {{ pulisci_riferimenti(v.errore) }} | {{ pulisci_riferimenti(v.approccio) }}{{ coda_riferimento(v.approccio, v.rif) }} |
+{% endfor %}
+{% else %}
+{% for v in trappole.voci %}
+{% set corpo = pulisci_riferimenti(v.errore) ~ (" — " ~ pulisci_riferimenti(v.approccio) if v.approccio else "") %}
+- {{ corpo }}{{ coda_riferimento(corpo, v.rif) }}
+{% endfor %}
+{% endif %}
+{%- endmacro -%}
+
+{%- macro tabelle(elenco_tabelle) -%}
+{% for t in elenco_tabelle %}
+## Tabella di riferimento rapido — {{ t.titolo }}
+
+{{ didascalia(t.didascalia) }}
+{{ pulisci_riferimenti(t.markdown) }}
+
+{% if t.nota_md %}
+> {{ pulisci_riferimenti(t.nota_md) }}
+
+{% endif %}
+{% endfor %}
+{%- endmacro -%}
+
+{#- Riga di etichette in coda. Il frontmatter resta la fonte per la pipeline; questa riga
+    esiste per l'applicazione del vault, che i tag li riconosce solo come `#cancelletto` nel
+    corpo. L'asterisco dei tag proposti non c'è: renderebbe l'etichetta irriconoscibile, e la
+    distinzione fra validato e proposto resta comunque nel frontmatter. -#}
+{%- macro etichette(meta) -%}
+{% set voci = tutti_i_tag(meta) %}
+{% if voci %}
+{{ voci | map("trim") | map("replace", "*", "") | map("etichetta") | join(" ") }}
+{% endif %}
+{%- endmacro -%}
+
+{%- macro bibliografia(nota, metadati) -%}
+## Riferimento bibliografico
+
+{% set citazione = metadati.citazione() %}
+{% if citazione %}
+{{ citazione }}
+{% else %}
+*Metadati bibliografici non recuperati da CrossRef né da PubMed: da completare a mano.*
+{% endif %}
+
+{% set bib = nota.bibliografia or {} %}
+{% if bib.letture_essenziali %}
+**Letture essenziali segnalate dagli autori**
+
+{{ elenco(bib.letture_essenziali) }}
+
+{% endif %}
+{% if bib.nota_md %}
+{{ pulisci_riferimenti(bib.nota_md) }}
+{% endif %}
+{%- endmacro -%}

@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paper-pipeline/schema/nota.schema.json",
+  "title": "Nota estratta da letteratura medica",
+  "description": "Output della chiamata di estrazione (prompt-estrazione-v4-json.md). I metadati bibliografici (autori, rivista, anno, doi, citazione) NON sono qui: vengono da CrossRef/PubMed e li aggiunge la pipeline.",
+  "type": "object",
+  "required": ["meta"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["title_it", "titolo_nota", "tipo", "criterio_riferimenti"],
+      "additionalProperties": false,
+      "properties": {
+        "title_it": { "type": "string", "minLength": 1 },
+        "titolo_nota": { "type": "string", "minLength": 1 },
+        "tipo": { "enum": ["narrative review", "linea guida", "altro"] },
+        "tipo_rilevato": { "type": ["string", "null"] },
+        "societa": { "type": ["string", "null"] },
+        "tags": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "tags_nuovi": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "criterio_riferimenti": { "enum": ["pagina", "sezione", "intestazione"] },
+        "nota_riferimenti": { "type": ["string", "null"] }
+      }
+    },
+
+    "argomento": { "type": ["string", "null"] },
+    "in_breve": { "type": "array", "items": { "type": "string" }, "default": [] },
+
+    "ambito": { "type": ["string", "null"] },
+    "novita": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "novita_assenti": { "type": "boolean", "default": false },
+    "grading_legenda": {
+      "type": ["object", "null"],
+      "required": ["contenuto_md"],
+      "additionalProperties": false,
+      "properties": {
+        "didascalia": { "type": ["string", "null"] },
+        "contenuto_md": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "dosaggi": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["parametro", "valore"],
+        "additionalProperties": false,
+        "properties": {
+          "ambito": { "type": ["string", "null"] },
+          "parametro": { "type": "string", "minLength": 1 },
+          "valore": { "type": "string", "minLength": 1 },
+          "rif": { "type": ["string", "null"] },
+          "ambiguo": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "dosaggi_assenti": { "type": "boolean", "default": false },
+
+    "sezioni": { "$ref": "#/$defs/sezioni" },
+
+    "raccomandazioni": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["tema", "testo"],
+        "additionalProperties": false,
+        "properties": {
+          "tema": { "type": "string", "minLength": 1 },
+          "tema_rif": { "type": ["string", "null"] },
+          "testo": { "type": "string", "minLength": 1 },
+          "cor": { "type": ["string", "null"] },
+          "loe": { "type": ["string", "null"] },
+          "razionale": { "type": ["string", "null"] },
+          "rif": { "type": ["string", "null"] },
+          "negativa": { "type": "boolean", "default": false },
+          "categoria_negativa": { "enum": ["nessun beneficio", "danno", null] },
+          "nota_md": { "type": ["string", "null"] }
+        }
+      }
+    },
+
+    "trappole": {
+      "type": ["object", "null"],
+      "required": ["voci"],
+      "additionalProperties": false,
+      "properties": {
+        "titolo": { "type": ["string", "null"] },
+        "nota": { "type": ["string", "null"] },
+        "dopo_sezione": { "type": ["string", "null"] },
+        "voci": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["errore"],
+            "additionalProperties": false,
+            "properties": {
+              "errore": { "type": "string", "minLength": 1 },
+              "approccio": { "type": ["string", "null"] },
+              "rif": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    },
+
+    "aree_incertezza": {
+      "type": ["object", "null"],
+      "required": ["voci"],
+      "additionalProperties": false,
+      "properties": {
+        "didascalia": { "type": ["string", "null"] },
+        "voci": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+      }
+    },
+
+    "tabelle": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["titolo", "markdown"],
+        "additionalProperties": false,
+        "properties": {
+          "titolo": { "type": "string", "minLength": 1 },
+          "didascalia": { "type": ["string", "null"] },
+          "markdown": { "type": "string", "minLength": 1 },
+          "nota_md": { "type": ["string", "null"] }
+        }
+      }
+    },
+
+    "figure_richieste": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["numero", "passaggio_fonte", "sezione_nota"],
+        "additionalProperties": false,
+        "properties": {
+          "numero": { "type": "string", "pattern": "^S?[1-9][0-9]{0,2}$" },
+          "passaggio_fonte": { "type": "string", "minLength": 25 },
+          "sezione_nota": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+
+    "bibliografia": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "letture_essenziali": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "nota_md": { "type": ["string", "null"] }
+      }
+    }
+  },
+
+  "$defs": {
+    "sezioni": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["titolo"],
+        "additionalProperties": false,
+        "properties": {
+          "titolo": { "type": "string", "minLength": 1 },
+          "rif": { "type": ["string", "null"] },
+          "contenuto_md": { "type": ["string", "null"] },
+          "sottosezioni": { "$ref": "#/$defs/sezioni" }
+        }
+      }
+    }
+  },
+
+  "allOf": [
+    {
+      "if": { "properties": { "meta": { "properties": { "criterio_riferimenti": { "const": "pagina" } } } } },
+      "then": true,
+      "else": {
+        "properties": { "meta": { "required": ["nota_riferimenti"], "properties": { "nota_riferimenti": { "type": "string", "minLength": 1 } } } }
+      }
+    }
+  ]
+}

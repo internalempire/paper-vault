@@ -1,0 +1,23 @@
+# Copiare in config.toml, escluso da Git. I percorsi relativi partono dalla radice del progetto.
+[percorsi]
+note = "note"
+json = "note/.json"
+# Per tenere i dati fuori dal codice: note = "~/Documents/Papers/note"
+# e json = "~/Documents/Papers/note/.json"
+
+[modelli]
+fornitore = "openai"  # oppure "anthropic"
+# Scegliere modelli disponibili per il proprio account. Stringa vuota = default adattatore.
+estrazione = ""
+classificazione = ""
+
+[estrazione]
+prompt = "prompts/prompt-estrazione-v4-json.md"
+ocr = true
+tabelle = true
+soglia_token_avviso = 150000
+
+[metadati]
+# Facoltativo: contatto per le richieste CrossRef, non una credenziale.
+# crossref_mailto = "nome@example.org"
+timeout_secondi = 15

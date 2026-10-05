@@ -1,0 +1,31 @@
+{#- Nota da narrative review. Riproduce la struttura di
+    tests/golden/2026-palmer-fisiopatologia-chetoacidosi.md e
+    tests/golden/2026-aletras-resistenza-diuretica-cardiorenale.md -#}
+{% import "_comuni.md.j2" as c %}
+{{ c.intestazione(nota, metadati) }}
+
+{% if nota.argomento %}
+## Argomento
+
+{{ pulisci_riferimenti(nota.argomento) }}
+
+{% endif %}
+{% if nota.in_breve %}
+## In breve
+
+{{ c.elenco(nota.in_breve) }}
+
+{% endif %}
+{% if nota.dosaggi or nota.dosaggi_assenti %}
+{{ c.dosaggi(nota) }}
+
+{% endif %}
+{{ c.sezioni(nota.sezioni or [], 2, nota.trappole) }}
+{% if nota.trappole and not nota.trappole.dopo_sezione %}
+{{ c.blocco_trappole(nota.trappole) }}
+
+{% endif %}
+{{ c.tabelle(nota.tabelle or []) }}
+{{ c.bibliografia(nota, metadati) }}
+
+{{ c.etichette(nota.meta) }}

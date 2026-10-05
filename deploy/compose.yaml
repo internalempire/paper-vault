@@ -1,0 +1,34 @@
+# Vault collegato a un Caddy esistente sulla rete esterna proxy.
+# Non espone porte sull'host. La directory note contiene Markdown e immagini.
+services:
+  silverbullet:
+    image: ghcr.io/silverbulletmd/silverbullet:latest
+    restart: unless-stopped
+    environment:
+      SB_USER: ${SB_USER:?Impostare SB_USER in .env}
+    volumes:
+      - ./note:/space
+    networks:
+      - proxy
+
+  dufs:
+    image: sigoden/dufs:latest
+    restart: unless-stopped
+    user: "0:0"
+    volumes:
+      - ./note:/space
+    command:
+      - /space
+      - --allow-all
+      - --path-prefix
+      - /dav
+      - --auth
+      - ${SB_USER:?Impostare SB_USER in .env}@/:rw
+      - --hidden
+      - .silverbullet.auth.json,.DS_Store,._*
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,9 @@
+# Sostituire il dominio e copiare nella directory sites montata sul Caddy esistente.
+vault.example.org {
+    handle /dav* {
+        reverse_proxy dufs:5000
+    }
+    handle {
+        reverse_proxy silverbullet:3000
+    }
+}

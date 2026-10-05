@@ -1,0 +1,144 @@
+{
+  "meta": {
+    "title_it": "Linee guida per la valutazione e il trattamento dell'embolia polmonare acuta nell'adulto",
+    "titolo_nota": "Embolia polmonare acuta — AHA/ACC 2026",
+    "tipo": "linea guida",
+    "tipo_rilevato": null,
+    "societa": "AHA/ACC/ACCP/ACEP/CHEST/SCAI/SHM/SIR/SVM/SVN",
+    "tags": [
+      "embolia-polmonare",
+      "anticoagulazione",
+      "trombolisi",
+      "terapia-intensiva"
+    ],
+    "tags_nuovi": [
+      "CTEPD"
+    ],
+    "criterio_riferimenti": "pagina",
+    "nota_riferimenti": null
+  },
+  "ambito": "Valutazione e gestione dell'embolia polmonare acuta nel paziente adulto (≥18 anni), dall'esordio dei sintomi al follow-up clinico.\n\n**Esplicitamente escluse**: profilassi primaria del TEV; gestione della CTEPD già accertata (p. e980, e982).",
+  "novita": [
+    "**Nuovo sistema di classificazione: AHA/ACC Acute PE Clinical Categories**, con 5 categorie (A–E) (Tabella 5, p. e989).",
+    "**EBPM raccomandata rispetto a ENF** quando serve anticoagulazione parenterale iniziale (COR 1) (p. e979, e1002)."
+  ],
+  "novita_assenti": false,
+  "grading_legenda": {
+    "didascalia": "Tabella 2, p. e981 — nomenclatura ACC/AHA, aggiornamento dicembre 2024",
+    "contenuto_md": "**Classe di raccomandazione (COR)** — 1 (forte, beneficio >>> rischio) · 2a (moderata) · 2b (debole) · 3: No Benefit (beneficio = rischio) · 3: Harm (rischio > beneficio)\n\n**Livello di evidenza (LOE)** — A · B-R · B-NR · C-LD · C-EO"
+  },
+  "dosaggi": [
+    {
+      "ambito": "Diagnosi",
+      "parametro": "D-dimero, soglia standard",
+      "valore": "500 µg/L",
+      "rif": "p. e985",
+      "ambiguo": false
+    },
+    {
+      "ambito": "Trombolisi",
+      "parametro": "rt-PA (alteplase) sistemica, dose standard",
+      "valore": "100 mg in 2 ore",
+      "rif": "p. e1012",
+      "ambiguo": false
+    },
+    {
+      "ambito": "Emodinamica",
+      "parametro": "Noradrenalina",
+      "valore": "≤15 µg/min: effetto trascurabile sulle PVR. **>15 µg/min: possibile aumento delle PVR** → aggiungere un secondo vasopressore anziché salire di dose",
+      "rif": "p. e1007",
+      "ambiguo": false
+    }
+  ],
+  "dosaggi_assenti": false,
+  "sezioni": [
+    {
+      "titolo": "Il sistema di categorie AHA/ACC",
+      "rif": "Figura 2, p. e990",
+      "contenuto_md": "| Cat. | Definizione | Sottocategorie |\n|---|---|---|\n| **A** | Subclinica: EP incidentale e asintomatica | A1 |\n| **E** | Insufficienza cardiopolmonare | E1 shock cardiogeno · E2 refrattario |\n\nLa categoria si assegna in base all'indicatore **più severo** (p. e990).",
+      "sottosezioni": []
+    }
+  ],
+  "raccomandazioni": [
+    {
+      "tema": "Valutazione clinica",
+      "tema_rif": "p. e983",
+      "testo": "Anamnesi mirata ed esame obiettivo completo in tutti i pazienti con sintomi suggestivi, per determinare la probabilità clinica pre-test.",
+      "cor": "1",
+      "loe": "A",
+      "razionale": "le strategie che combinano strumenti clinici e D-dimero migliorano la resa dell'imaging e riducono gli esami inutili",
+      "rif": "p. e983",
+      "negativa": false,
+      "categoria_negativa": null,
+      "nota_md": null
+    },
+    {
+      "tema": "Valutazione clinica",
+      "tema_rif": "p. e983",
+      "testo": "D-dimero aggiustato per età sotto soglia in probabilità clinica bassa o intermedia (<50%): esclude l'EP e la necessità di imaging.",
+      "cor": "2a",
+      "loe": "B-R",
+      "razionale": "meno del 2% di TEV mancati a 1-3 mesi; in uno studio su 3346 pazienti il failure rate a 3 mesi è stato dello 0,3%",
+      "rif": "p. e983-984",
+      "negativa": false,
+      "categoria_negativa": null,
+      "nota_md": "**Attenzione**: la maggior parte degli studi sulle strategie basate sul D-dimero ha escluso i pazienti già in anticoagulazione terapeutica (p. e983)."
+    },
+    {
+      "tema": "Filtro cavale",
+      "tema_rif": "p. e1009",
+      "testo": "Se l'anticoagulazione non è tollerata e il filtro è ritenuto necessario: filtri rimovibili preferiti ai permanenti.",
+      "cor": "1",
+      "loe": "B-R",
+      "razionale": "nel PREPIC i filtri permanenti hanno aumentato TVP e trombosi cavale senza migliorare la sopravvivenza",
+      "rif": "p. e1009-1010",
+      "negativa": false,
+      "categoria_negativa": null,
+      "nota_md": null
+    },
+    {
+      "tema": "Filtro cavale",
+      "tema_rif": "p. e1009",
+      "testo": "Paziente adeguatamente anticoagulato: NON posizionare filtri di routine.",
+      "cor": "3: Harm",
+      "loe": "A",
+      "razionale": "PREPIC e PREPIC2 hanno mostrato che l'aggiunta del filtro non riduce le recidive ma aumenta il rischio di TVP",
+      "rif": "p. e1011",
+      "negativa": true,
+      "categoria_negativa": "danno",
+      "nota_md": null
+    },
+    {
+      "tema": "Terapie avanzate",
+      "tema_rif": "p. e1011",
+      "testo": "Categorie A–C1: trombolisi catetere-diretta, trombectomia meccanica ed embolectomia chirurgica non indicate.",
+      "cor": "3: No Benefit",
+      "loe": "C-EO",
+      "razionale": null,
+      "rif": "p. e1012",
+      "negativa": true,
+      "categoria_negativa": "nessun beneficio",
+      "nota_md": null
+    }
+  ],
+  "aree_incertezza": {
+    "didascalia": "Tabella 11, p. e1030 — selezione",
+    "voci": [
+      "**Validazione delle stesse categorie cliniche AHA/ACC** appena introdotte",
+      "Performance delle strategie basate sul D-dimero nei pazienti già in anticoagulazione terapeutica",
+      "Ruolo dei **dispositivi di supporto isolato del RV** nella categoria E"
+    ]
+  },
+  "tabelle": [
+    {
+      "titolo": "terapie avanzate per categoria",
+      "didascalia": "Tabella 7, p. e1012 — COR e LOE",
+      "markdown": "| Categoria | Trombolisi sistemica | CDL | Trombectomia meccanica |\n|---|---|---|---|\n| **A–C1** | 3-Harm A | 3-NB C-EO | 3-NB C-EO |\n| **E1** | 2a C-LD | 2a C-LD | 2a B-NR |",
+      "nota_md": null
+    }
+  ],
+  "bibliografia": {
+    "letture_essenziali": [],
+    "nota_md": "Copubblicata sul *Journal of the American College of Cardiology*. Materiale supplementare disponibile presso l'editore."
+  }
+}

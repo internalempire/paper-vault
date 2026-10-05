@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title_it": "Un documento che non è né una review né una linea guida",
+    "titolo_nota": "Documento fuori categoria",
+    "tipo": "altro",
+    "tipo_rilevato": "editoriale",
+    "societa": null,
+    "tags": [
+      "terapia-intensiva"
+    ],
+    "tags_nuovi": [],
+    "criterio_riferimenti": "pagina",
+    "nota_riferimenti": null
+  },
+  "argomento": "Commento editoriale su un singolo studio.",
+  "in_breve": [
+    "**Nessun dato azionabile nuovo**: il testo commenta risultati pubblicati altrove (p. 12)."
+  ],
+  "dosaggi": [],
+  "dosaggi_assenti": true,
+  "sezioni": [
+    {
+      "titolo": "Tesi degli autori",
+      "rif": "p. 12",
+      "contenuto_md": "Il campione era insufficiente a escludere un effetto clinicamente rilevante.",
+      "sottosezioni": []
+    }
+  ],
+  "tabelle": [],
+  "bibliografia": {
+    "letture_essenziali": [
+      "Felig P, et al. Amino acid metabolism during prolonged starvation. *J Clin Invest.* 1969;48(3):584-594"
+    ],
+    "nota_md": null
+  }
+}

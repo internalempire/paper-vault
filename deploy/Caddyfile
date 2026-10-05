@@ -1,0 +1,2 @@
+# Proxy per host dedicato. Per la VPS condivisa preservare il Caddyfile di Shazam.
+import /etc/caddy/sites/*.caddy

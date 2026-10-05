@@ -1,0 +1,17 @@
+pymupdf>=1.26        # estrazione testo, tabelle, TOC, page label
+jinja2>=3.1          # rendering dei template della nota (Fase 1, §6.6)
+jsonschema>=4.23     # validazione del JSON intermedio contro schema/nota.schema.json
+requests>=2.32       # CrossRef e PubMed (§6.3)
+# Uno dei due, secondo il fornitore scelto in config.toml:
+anthropic>=1.0       # classificazione ed estrazione
+openai>=3.0          # idem, versione OpenAI
+python-dotenv>=1.0   # la chiave API da .env, senza esportarla in ogni shell
+
+# ocrmypdf non è una dipendenza Python del progetto: viene invocato come eseguibile
+# esterno solo quando il PDF è privo di strato di testo (brew install ocrmypdf).
+
+# Solo per lo sviluppo:
+pytest>=8.0
+
+beautifulsoup4>=4.12,<5  # struttura full-text HTML, didascalie e immagini
+Pillow>=11,<13        # verifica e decodifica originali PNG, JPEG, WebP

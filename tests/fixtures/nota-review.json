@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "title_it": "Resistenza diuretica nella sindrome cardiorenale: meccanismi, monitoraggio e gestione per fenotipi",
+    "titolo_nota": "Resistenza diuretica nella sindrome cardiorenale",
+    "tipo": "narrative review",
+    "tipo_rilevato": null,
+    "societa": null,
+    "tags": [
+      "sindrome-cardiorenale",
+      "resistenza-diuretica",
+      "diuretici-dell-ansa",
+      "cloro"
+    ],
+    "tags_nuovi": [
+      "VExUS"
+    ],
+    "criterio_riferimenti": "sezione",
+    "nota_riferimenti": "**Nota sui riferimenti**: l'articolo è pubblicato in formato elettronico a paginazione continua e non ha numeri di pagina. I riferimenti sono quindi ai numeri di sezione dell'articolo (§)."
+  },
+  "argomento": "Revisione narrativa sulla resistenza diuretica (DR) nello scompenso cardiaco acuto e cronico e nella sindrome cardiorenale: meccanismi fisiopatologici, strumenti di riconoscimento precoce al letto del paziente e strategie terapeutiche declinate su quattro fenotipi clinici.\n\nGli autori dichiarano esplicitamente che il framework fenotipico è **un modello concettuale di supporto alla decisione clinica, non un sistema di classificazione validato** (§1).",
+  "in_breve": [
+    "**Il 20-30% dei pazienti non raggiunge una natriuresi adeguata** nonostante terapia aggressiva. Non esiste una definizione universale di DR (§1).",
+    "**Quello che viene interpretato come resistenza è spesso sottodosaggio o inadeguata delivery del farmaco, non vera resistenza farmacologica.** (§1)",
+    "**Il cloro, più del sodio, è il determinante emergente.** L'ipocloremia si associa a esiti avversi e ridotta efficienza diuretica (§3.4)."
+  ],
+  "dosaggi": [
+    {
+      "ambito": "Dosaggio ansa",
+      "parametro": "Furosemide EV, paziente diuretico-naïve (ESC)",
+      "valore": "20-40 mg",
+      "rif": "§4",
+      "ambiguo": false
+    },
+    {
+      "ambito": "Monitoraggio",
+      "parametro": "Sodio urinario spot dopo bolo EV",
+      "valore": "**<50-70 mmol/L indica risposta inadeguata** → escalation della dose o blocco sequenziale del nefrone",
+      "rif": "§4",
+      "ambiguo": false
+    },
+    {
+      "ambito": "Monitoraggio",
+      "parametro": "Timing del prelievo per UNa",
+      "valore": "`[formulazione ambigua nella fonte]` — il testo indica **1-2 h** dopo il bolo EV, la Tabella 2 indica **2-6 h**",
+      "rif": "§4, Tab. 2",
+      "ambiguo": true
+    }
+  ],
+  "dosaggi_assenti": false,
+  "sezioni": [
+    {
+      "titolo": "Meccanismi della resistenza diuretica",
+      "rif": null,
+      "contenuto_md": "La DR si divide in **resistenza a breve termine** e **resistenza a lungo termine**, legata al potenziamento del riassorbimento sodico nel nefrone distale (§3).",
+      "sottosezioni": [
+        {
+          "titolo": "Delivery del farmaco e meccanismi prossimali",
+          "rif": "§3.1",
+          "contenuto_md": "L'**edema di parete intestinale** riduce la biodisponibilità orale dei diuretici dell'ansa.",
+          "sottosezioni": []
+        },
+        {
+          "titolo": "Adattamenti tubulari distali",
+          "rif": "§3.2",
+          "contenuto_md": "Ipertrofia e iperfunzione del tubulo distale.\n\n> Un dettaglio meccanicistico con ricaduta pratica: nella **sindrome nefrosica la plasmina urinaria attiva direttamente l'ENaC**.",
+          "sottosezioni": []
+        }
+      ]
+    },
+    {
+      "titolo": "Fenotipo 1 — Scompenso cardiaco destro",
+      "rif": "§5.1",
+      "contenuto_md": "La congestione venosa sistemica riduce il gradiente di perfusione renale.",
+      "sottosezioni": []
+    }
+  ],
+  "trappole": {
+    "titolo": "Cosa non fare — trappole terapeutiche nello scompenso destro",
+    "nota": "Tabella 4 dell'articolo. Non sono raccomandazioni formali graduate, ma errori esplicitamente identificati dagli autori.",
+    "dopo_sezione": "Fenotipo 1 — Scompenso cardiaco destro",
+    "voci": [
+      {
+        "errore": "**Bolo unico giornaliero di diuretico dell'ansa**",
+        "approccio": "Frazionare le dosi o passare all'infusione continua, per minimizzare la ritenzione sodica post-diuretica",
+        "rif": null
+      },
+      {
+        "errore": "**Usare α-agonisti puri (fenilefrina) nell'insufficienza ventricolare destra**",
+        "approccio": "Preferire noradrenalina (± vasopressina) per sostenere la pressione sistemica preservando l'output destro",
+        "rif": null
+      }
+    ]
+  },
+  "tabelle": [
+    {
+      "titolo": "classi diuretiche e sito d'azione",
+      "didascalia": "Tabella 1",
+      "markdown": "| Classe | Sito d'azione primario | Meccanismo |\n|---|---|---|\n| Diuretici dell'ansa (furosemide, torasemide) | Branca ascendente spessa dell'ansa di Henle | Inibizione del cotrasportatore Na⁺-K⁺-2Cl⁻ |\n| Tiazidici (idroclorotiazide) | Tubulo contorto distale | Inibizione del cotrasportatore Na⁺-Cl⁻ |",
+      "nota_md": null
+    }
+  ],
+  "bibliografia": {
+    "letture_essenziali": [],
+    "nota_md": "Open access. Il finanziamento dell'APC è dichiarato a carico di una società scientifica; gli autori dichiarano assenza di conflitti di interesse commerciali o finanziari."
+  }
+}

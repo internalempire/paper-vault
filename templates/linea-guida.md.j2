@@ -1,0 +1,99 @@
+{#- Nota da linea guida. Riproduce la struttura di
+    tests/golden/2026-aha-acc-embolia-polmonare-acuta.md
+
+    Le righe orizzontali separano i tre blocchi maggiori — raccomandazioni, vista trasversale,
+    tabelle — come nel golden: su una nota di novanta raccomandazioni servono a ritrovare il
+    punto scorrendo. La nota da review non le usa. -#}
+{% import "_comuni.md.j2" as c %}
+{{ c.intestazione(nota, metadati) }}
+
+{% if nota.grading_legenda %}
+## Legenda del sistema di grading
+
+{{ c.didascalia(nota.grading_legenda.didascalia) }}
+{{ pulisci_riferimenti(nota.grading_legenda.contenuto_md) }}
+
+{% endif %}
+{% if nota.ambito %}
+## Ambito
+
+{{ pulisci_riferimenti(nota.ambito) }}
+
+{% endif %}
+{% if nota.novita or nota.novita_assenti %}
+## Novità rispetto alle precedenti
+
+{% if nota.novita %}
+{{ c.elenco(nota.novita) }}
+{% else %}
+Il documento non esplicita confronti con linee guida precedenti.
+{% endif %}
+
+{% endif %}
+{% if nota.dosaggi or nota.dosaggi_assenti %}
+{{ c.dosaggi(nota) }}
+
+{% endif %}
+{{ c.sezioni(nota.sezioni or [], 2, none) }}
+{% if nota.raccomandazioni %}
+---
+
+## Raccomandazioni
+
+{% for tema, gruppo in raggruppa_per_tema(nota.raccomandazioni) %}
+{{ c.titolo(3, tema, gruppo[0].tema_rif) }}
+
+{% for r in gruppo %}
+**{{ pulisci_riferimenti(r.testo) }}**
+{% set grado = ("`COR " ~ r.cor ~ "`" if r.cor else "") ~ (" " if r.cor and r.loe else "") ~ ("`LOE " ~ r.loe ~ "`" if r.loe else "") %}
+{% if grado %}
+{{ grado }}
+{% endif %}
+{% if r.razionale %}
+{% set rif = " (" ~ r.rif ~ ")" if r.rif and mostra_riferimenti else "" %}
+*Razionale*: {{ pulisci_riferimenti(r.razionale) }}{{ rif }}.
+{% endif %}
+
+{% if r.nota_md %}
+> {{ pulisci_riferimenti(r.nota_md) }}
+
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% set negative = nota.raccomandazioni|default([])|selectattr("negativa")|list %}
+{% if negative %}
+---
+
+## Cosa non fare
+
+*Vista trasversale sulle raccomandazioni che sconsigliano o controindicano un intervento. Restano tutte al loro posto tematico nella sezione precedente: qui sono raggruppate perché sono le più facili da perdere disperse nella nota e le più utili da avere insieme, essendo spesso quelle che contraddicono la pratica corrente.*
+
+{% for titolo_gruppo, spiegazione, gruppo in raggruppa_negative(negative) %}
+### {{ titolo_gruppo }}
+
+{{ spiegazione }}
+
+{% for r in gruppo %}
+{% set grado = " `LOE " ~ r.loe ~ "`" if r.loe else "" %}
+{% set rif = " (" ~ r.rif ~ ")" if r.rif and mostra_riferimenti else "" %}
+- **{{ pulisci_riferimenti(r.testo) }}**{{ grado }}{{ rif }}
+{% endfor %}
+
+{% endfor %}
+{% endif %}
+{% if nota.tabelle %}
+---
+
+{{ c.tabelle(nota.tabelle) }}
+{% endif %}
+{% if nota.aree_incertezza %}
+## Aree di incertezza dichiarate
+
+{{ c.didascalia(nota.aree_incertezza.didascalia) }}
+{{ c.elenco(nota.aree_incertezza.voci) }}
+
+{% endif %}
+{{ c.bibliografia(nota, metadati) }}
+
+{{ c.etichette(nota.meta) }}
