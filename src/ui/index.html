@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paper Vault · Nuova nota</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="top"><a class="brand" href="/">Paper Vault</a><span>Dal paper alla tua nota.</span><a id="vault-link" hidden target="_blank" rel="noopener noreferrer">Apri SilverBullet ↗</a></header>
+  <div class="layout">
+    <aside><button id="new-job" class="primary">Nuovo articolo</button><details id="history" open><summary>Lavori salvati</summary><nav id="jobs" aria-label="Lavori salvati"><p class="muted">Caricamento…</p></nav></details><p class="side-note">I lavori restano su questo Mac. Puoi chiudere la pagina e riprenderli in seguito.</p></aside>
+    <main id="main" tabindex="-1">
+      <ol class="steps" aria-label="Passaggi"><li>1. Fonte</li><li>2. Testo</li><li>3. Revisione</li><li>4. Pubblicazione</li></ol>
+      <div id="notice" role="alert" hidden></div>
+      <div id="content"><p>Caricamento dell’interfaccia…</p></div>
+    </main>
+  </div>
+  <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>

@@ -20,7 +20,7 @@ cp config.example.toml config.toml
 cp .env.example .env
 ```
 
-Il repository è privato: il clone richiede un account GitHub autorizzato. Compilare `.env` con la chiave del fornitore scelto e, se si vuole pubblicare, con le credenziali del vault. Adattare `config.toml`; i percorsi relativi in quel file sono risolti rispetto alla radice del progetto. I comandi seguenti vanno eseguiti dalla radice del progetto con l'ambiente virtuale attivo.
+Il repository è privato: il clone richiede un account GitHub autorizzato. Compilare `.env` con la chiave del fornitore scelto e, se si vuole pubblicare, con le credenziali del vault. Adattare `config.toml`; i percorsi relativi in quel file sono risolti rispetto alla radice del progetto. Per l’uso quotidiano, dopo la configurazione, passare alla sezione **Interfaccia personale sul Mac**. I comandi seguenti sono l’alternativa da terminale e vanno eseguiti dalla radice del progetto con l'ambiente virtuale attivo.
 
 ```bash
 # Controllo senza chiamate al modello né scrittura delle note
@@ -36,6 +36,31 @@ python -m src.ingest "https://editore.example/articolo/full" --pubblica
 ```
 
 Se ci sono figure da verificare, il testo e il JSON vengono salvati ma la pubblicazione resta bloccata fino all'approvazione o all'esclusione di tutte le figure selezionate. L'anteprima indicata nel riepilogo si apre nel browser. La procedura completa è nella sezione **Figure**.
+
+## Interfaccia personale sul Mac
+
+Dopo l’installazione, fare doppio clic su **`Apri Paper Vault.command`** nella cartella del progetto. Si apre il browser su `http://127.0.0.1:8765`. Lasciare aperta la finestra Terminale mentre si lavora; `Ctrl+C` arresta il servizio dopo i lavori in corso. In alternativa:
+
+```bash
+.venv/bin/python -m src.webapp --open
+```
+
+1. **Fonte:** scegliere un PDF (massimo 100 MiB) oppure incollare il link alla pagina full-text e premere **Estrai il testo**. Questo passaggio non chiama il modello.
+2. **Testo:** controllare il testo completo, i metadati e gli avvisi. Premere **Genera la nota** per inviare quel testo al modello configurato, tramite API a pagamento. Il testo mostrato viene conservato e riusato nella richiesta, senza un secondo download della fonte. Se esiste già il JSON per quel DOI, viene recuperata la nota salvata senza nuova elaborazione.
+3. **Revisione:** leggere l’anteprima e, per ogni figura, controllare immagine, didascalia e passaggio della fonte. Premere **Approva figura** oppure **Escludi**. L’anteprima si aggiorna e la pubblicazione si abilita soltanto dopo tutte le decisioni. Le immagini si possono aprire a dimensione originale. Per immagini web non disponibili c’è **Riprova le immagini mancanti**, senza chiamate al modello.
+4. **Pubblicazione:** premere **Pubblica su SilverBullet**. Il servizio carica e verifica prima le immagini, poi il Markdown; aggiorna l’indice e mostra il collegamento alla nota sul vault. Se l’indice fallisce, la nota resta pubblicata e si può riprovare l’aggiornamento.
+
+I **Lavori salvati** restano disponibili dopo la chiusura della pagina e il riavvio del servizio. Non vengono avviate elaborazioni dal semplice aggiornamento del browser. I doppi clic sullo stesso lavoro sono bloccati; una coda esegue un lavoro per volta. Un riavvio durante l’elaborazione lascia il lavoro da riprendere esplicitamente: se il JSON è già stato salvato viene recuperato anche senza DOI; se la risposta del modello è andata persa prima del salvataggio, riprovare può comportare un nuovo costo.
+
+Se sul vault esiste già una versione diversa, l’invio si ferma e propone **Sostituisci la nota sul vault**. Questa scelta sostituisce l’intero testo remoto, conservando prima una copia locale nella cartella del lavoro (`vault-prima-*.md`). La sostituzione non viene decisa automaticamente.
+
+### Dove sono salvati i lavori
+
+La cartella è `<percorsi.note>/.webapp/<id-lavoro>/`. Contiene lo stato, il testo estratto, una **copia del PDF caricato**, il JSON, il Markdown e le immagini. L’originale non viene spostato. Per il web vengono conservati testo estratto e catalogo figure. Dopo la pubblicazione, JSON e allegati vengono copiati anche nelle cartelle globali già usate dalla pipeline; il Markdown resta nella cartella del lavoro. Includere `.webapp` nel backup del Mac: non viene caricato su GitHub né sul server.
+
+L’interfaccia usa la stessa configurazione e le stesse credenziali della pipeline (`config.toml`, `.env`); non richiede di inserirle nel browser. Ascolta esclusivamente sul Mac, su `127.0.0.1`, con controlli sull’origine delle richieste. La porta può essere scelta con `--port`, senza avviare due istanze sulla stessa cartella lavori. Non richiede modifiche ai container o al proxy della VPS. Da telefono si continua a leggere il risultato in SilverBullet.
+
+La prima versione consente approvazione/esclusione delle figure, anteprima e download Markdown; la correzione manuale di un ritaglio PDF resta disponibile attraverso `src.figure`. Per HTML locali resta disponibile la CLI. Se un editore impedisce l’accesso automatico alla pagina, scaricare il PDF e caricarlo nell’interfaccia.
 
 ## Architettura
 
@@ -63,6 +88,7 @@ flowchart TD
 
 | Componente | Responsabilità |
 |---|---|
+| `src/webapp.py`, `src/ui/` | Interfaccia locale, lavori persistenti, coda, revisione e pubblicazione esplicita |
 | `src/ingest.py` | Configurazione, orchestrazione, riuso del JSON per DOI, salvataggio e pubblicazione |
 | `src/extract.py` | PDF a colonne, tabelle, OCR, pagine stampate, HTML locale e ingresso da URL |
 | `src/web_article.py` | Download full-text, selezione del corpo HTML, DOI dichiarato, catalogo figure e download originali |
@@ -77,7 +103,7 @@ flowchart TD
 | `src/scarica.py` | Copia di sicurezza delle note remote e degli allegati |
 | `deploy/` | Esempi Docker Compose e Caddy senza segreti |
 
-Non ci sono ancora watcher, interfaccia di caricamento, coda di elaborazione, database SQLite o schedulazione automatica. L'ingresso è un comando esplicito. La pipeline non archivia né sposta il PDF originale.
+L’ingresso avviene dall’interfaccia locale oppure da un comando esplicito. I lavori dell’interfaccia sono persistenti su file JSON e usano una coda con un solo esecutore; non sono presenti watcher o schedulazione automatica. La CLI legge il PDF nella sua posizione; l’interfaccia conserva una copia del PDF caricato per poter riprendere il lavoro.
 
 ## Pipeline e regole di contenuto
 
@@ -88,7 +114,7 @@ Non ci sono ancora watcher, interfaccia di caricamento, coda di elaborazione, da
 5. **Validazione.** Il JSON deve rispettare lo schema; in caso di errore viene tentata una correzione del modello. Un errore persistente ferma l'elaborazione. Le note supportano narrative review e linee guida secondo le regole del prompt; gli altri tipi vengono gestiti secondo la classificazione prevista dal prompt.
 6. **Persistenza.** Il JSON viene salvato prima del recupero delle figure, per non perdere l'estrazione già pagata in caso di download fallito. Per il web contiene anche il testo estratto, il catalogo immagini e la provenienza della pagina.
 7. **Figure e rendering.** Python verifica i richiami selezionati; recupera gli originali web o propone ritagli PDF. Dopo la revisione, il renderer inserisce le immagini nella sezione pertinente e produce il Markdown.
-8. **Pubblicazione.** Gli allegati sono inviati e riletti prima della nota. Il Markdown locale viene cancellato soltanto dopo aver verificato il contenuto remoto. JSON, anteprime e immagini locali restano disponibili.
+8. **Pubblicazione.** Gli allegati sono inviati e riletti prima della nota. La CLI cancella il Markdown locale soltanto dopo aver verificato il contenuto remoto; l’interfaccia lo conserva nella cartella del lavoro. JSON, anteprime e immagini locali restano disponibili.
 
 Le note devono essere dense e operative, in italiano, fedeli alla fonte, con cifre, dosaggi e ambiguità tracciabili. La validazione dello schema non certifica la correttezza clinica: il controllo della nota e dei dati numerici sulla fonte resta parte del lavoro. I riferimenti sono conservati nel JSON; il renderer attuale nasconde i richiami puntuali nel Markdown (`MOSTRA_RIFERIMENTI` in `src/render.py`).
 

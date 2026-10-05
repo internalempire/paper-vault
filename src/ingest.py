@@ -116,16 +116,8 @@ class Esito:
 # --------------------------------------------------------------------------------------
 
 
-def ingest(
-    percorso: str | Path,
-    configurazione: Configurazione,
-    *,
-    estrattore: Estrattore | None = None,
-    dry_run: bool = False,
-    forza: bool = False,
-    data_nota: dt.date | str | None = None,
-    vault=None,
-) -> Esito:
+def prepara_ingresso(percorso: str | Path, configurazione: Configurazione) -> Esito:
+    """Estrazione e metadati senza LLM: lo stesso risultato può essere approvato dalla UI."""
     from src.web_article import e_url
 
     percorso = str(percorso) if e_url(percorso) else Path(percorso).expanduser().resolve()
@@ -178,7 +170,24 @@ def ingest(
             "della nota vanno ricontrollate sull'originale"
         )
 
-    esito = Esito(slug="", documento=documento, metadati=metadati, avvisi=avvisi)
+    return Esito(slug="", documento=documento, metadati=metadati, avvisi=avvisi,
+                 documento_sorgente=percorso)
+
+
+def ingest(
+    percorso: str | Path,
+    configurazione: Configurazione,
+    *,
+    estrattore: Estrattore | None = None,
+    dry_run: bool = False,
+    forza: bool = False,
+    data_nota: dt.date | str | None = None,
+    vault=None,
+    preparato: Esito | None = None,
+) -> Esito:
+    esito = preparato or prepara_ingresso(percorso, configurazione)
+    documento, metadati, avvisi = esito.documento, esito.metadati, esito.avvisi
+    percorso = esito.documento_sorgente or documento.percorso
 
     # La versione Fase 1 dell'idempotenza: lo stato in SQLite arriva con l'automazione. La
     # chiave è il DOI, non il nome del file — il nome dipende dal titolo tradotto, che il
