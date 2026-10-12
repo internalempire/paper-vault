@@ -14,7 +14,7 @@ Tutti i comandi si lanciano da `/Users/nicola/code/paper-pipeline`.
 1. Nella cartella del progetto fai doppio clic su **Apri Paper Vault.command**. Si apre `http://127.0.0.1:8765`; tieni aperta la finestra Terminale.
 2. Scegli il PDF oppure incolla il link al full-text e premi **Estrai il testo**.
 3. Controlla il testo e gli avvisi, poi premi **Genera la nota**: è il passaggio che può usare l’API a pagamento.
-4. Leggi l’anteprima e premi **Approva figura** o **Escludi** per ogni immagine proposta.
+4. Leggi l’anteprima e premi **Approva figura** o **Escludi** per ogni immagine proposta. Se manca o è sbagliata, inserisci il link diretto all’immagine e premi **Carica anteprima**, poi approvala. Se richiesto, conferma di aver verificato il richiamo sulla fonte.
 5. Premi **Pubblica su SilverBullet**, poi apri la nota dal collegamento mostrato.
 
 Puoi chiudere il browser e riprendere dai **Lavori salvati**. L’interfaccia conserva una copia del PDF e tutti i risultati in `/Users/nicola/Documents/Papers/note/.webapp/`; dopo la pubblicazione conserva anche il Markdown. In caso di nota remota diversa ti chiede di scegliere esplicitamente se sostituirla e salva la versione precedente sul Mac. Nessuna nuova elaborazione parte da sola dopo un’interruzione.

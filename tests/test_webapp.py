@@ -51,6 +51,9 @@ def carica(env, documento):
 
 def azione(env, id, name, **data):
     c, h, jobs, _, _ = env
+    if name == 'figura' and data.get('scelta') == 'approvata' and 'sha256' not in data:
+        view = c.get(f'/api/jobs/{id}').json
+        data['sha256'] = next(f.get('sha256') for f in view['figure'] if f['numero'] == data['numero'])
     response = c.post(f'/api/jobs/{id}/{name}', json=data, headers=h)
     if name != 'figura' and response.status_code == 200:
         jobs.futures[id].result(timeout=10)
@@ -254,3 +257,140 @@ def test_errore_modello_non_espone_segreti(ambiente, documento, monkeypatch):
     azione(ambiente,id,'genera')
     result=ambiente[0].get(f'/api/jobs/{id}').json
     assert result['stato']=='errore' and 'sk-secret' not in result['errore']
+
+
+def manuale(env, documento, monkeypatch, *, verificata=True):
+    from src import web_article
+    from PIL import Image
+    id = carica(env, documento)
+    azione(env, id, 'genera')
+    jobs = env[2]
+    j, md = jobs.paths(jobs.leggi(id))
+    data = web.leggi_json(j)
+    f = data['figure'][0]
+    f.update(stato='non_disponibile', selezione_verificata=verificata,
+             problema='Immagine non riconosciuta' if verificata else 'Richiamo non verificato')
+    for key in ('percorso', 'sha256'):
+        f.pop(key, None)
+    web.scrivi_json(j, data)
+    jobs._rigenera(jobs.leggi(id))
+    image = io.BytesIO()
+    Image.new('RGB', (160, 100), 'green').save(image, format='PNG')
+    monkeypatch.setattr(web_article, 'scarica', lambda url, **kw: (image.getvalue(), url, 'image/png'))
+    return id, j, md
+
+
+def test_link_manuale_anteprima_approvazione_pubblicazione(ambiente, documento, monkeypatch):
+    id, j, md = manuale(ambiente, documento, monkeypatch)
+    url = 'https://publisher.example/figure-original.png'
+    assert azione(ambiente, id, 'immagine_url', numero='1', url=url).status_code == 200
+    c, _, jobs, llm, vault = ambiente
+    view = c.get(f'/api/jobs/{id}').json
+    f = view['figure'][0]
+    assert view['stato'] == 'revisione' and f['stato'] == 'da_verificare'
+    assert f['url_manuale'] == url and 'pagina_pdf' not in f
+    assert c.get(f['immagine']).status_code == 200
+    assert not view['pronto'] and '![' not in md.read_text()
+    assert azione(ambiente, id, 'pubblica').status_code == 409
+    azione(ambiente, id, 'figura', numero='1', scelta='approvata')
+    assert '<img' in c.get(f'/api/jobs/{id}/preview').json['html']
+    assert f['percorso'] in md.read_text() and 'da link fornito manualmente' in md.read_text()
+    azione(ambiente, id, 'pubblica')
+    assert c.get(f'/api/jobs/{id}').json['stato'] == 'pubblicato'
+    assert vault.files and llm.calls == 1
+    assert azione(ambiente, id, 'immagine_url', numero='1', url=url).status_code == 409
+
+
+def test_link_non_scavalca_verifica_richiamo(ambiente, documento, monkeypatch):
+    id, j, md = manuale(ambiente, documento, monkeypatch, verificata=False)
+    azione(ambiente, id, 'immagine_url', numero='1', url='https://publisher.example/fig.png')
+    assert not web.leggi_json(j)['figure'][0]['selezione_verificata']
+    assert azione(ambiente, id, 'figura', numero='1', scelta='approvata').status_code == 409
+    assert azione(ambiente, id, 'figura', numero='1', scelta='approvata', conferma_richiamo=True).status_code == 200
+    assert web.leggi_json(j)['figure'][0]['verifica_selezione'] == 'manuale'
+    assert 'problema_selezione' in web.leggi_json(j)['figure'][0]
+
+
+def test_link_errato_conserva_immagine_precedente_e_url(ambiente, documento, monkeypatch):
+    from src import web_article
+    id, j, md = manuale(ambiente, documento, monkeypatch)
+    azione(ambiente, id, 'immagine_url', numero='1', url='https://publisher.example/fig.png')
+    azione(ambiente, id, 'figura', numero='1', scelta='approvata')
+    before, markdown = j.read_bytes(), md.read_bytes()
+    monkeypatch.setattr(web_article, 'scarica', lambda *a, **kw: (b'<html>Not an image</html>', a[0], 'application/octet-stream'))
+    azione(ambiente, id, 'immagine_url', numero='1', url='https://publisher.example/figure-page')
+    view = ambiente[0].get(f'/api/jobs/{id}').json
+    assert view['stato'] == 'errore' and view['immagine_manuale']['url'].endswith('figure-page')
+    assert j.read_bytes() == before and md.read_bytes() == markdown
+    # Nuova risorsa valida: annulla l'approvazione precedente.
+    image = io.BytesIO()
+    from PIL import Image
+    Image.new('RGB', (160, 100), 'blue').save(image, format='PNG')
+    monkeypatch.setattr(web_article, 'scarica', lambda url, **kw: (image.getvalue(), url, 'image/png'))
+    azione(ambiente, id, 'immagine_url', numero='1', url='https://publisher.example/new.png')
+    assert web.leggi_json(j)['figure'][0]['stato'] == 'da_verificare'
+    assert '![' not in md.read_text()
+
+
+@pytest.mark.parametrize('url', ['file:///etc/passwd', 'javascript:alert(1)', 'https://user:password@example.org/image.png'])
+def test_link_manuale_rifiuta_url_non_validi(ambiente, documento, monkeypatch, url):
+    id, j, md = manuale(ambiente, documento, monkeypatch)
+    assert azione(ambiente, id, 'immagine_url', numero='1', url=url).status_code == 409
+
+
+def test_link_manuale_blocca_rete_locale(ambiente, documento, monkeypatch):
+    from src import web_article
+    fetch_originale = web_article.scarica
+    id, j, md = manuale(ambiente, documento, monkeypatch)
+    monkeypatch.setattr(web_article, 'scarica', fetch_originale)
+    azione(ambiente, id, 'immagine_url', numero='1', url='http://127.0.0.1/secret.png')
+    view = ambiente[0].get(f'/api/jobs/{id}').json
+    assert view['stato'] == 'errore' and 'pubblici' in view['errore']
+    assert not view['figure'][0]['immagine']
+
+
+def test_link_manuale_rifiuta_figura_estranea_o_sezione_assente(ambiente, documento, monkeypatch):
+    id, j, md = manuale(ambiente, documento, monkeypatch)
+    assert azione(ambiente, id, 'immagine_url', numero='999', url='https://publisher.example/fig.png').status_code == 409
+    data = web.leggi_json(j)
+    data['figure'][0]['sezione_nota'] = 'Sezione inesistente'
+    web.scrivi_json(j, data)
+    assert azione(ambiente, id, 'immagine_url', numero='1', url='https://publisher.example/fig.png').status_code == 409
+
+
+def test_download_manuale_blocca_azioni_concorrenti(ambiente, documento, monkeypatch):
+    from src import web_article
+    id, j, md = manuale(ambiente, documento, monkeypatch)
+    started, finish = threading.Event(), threading.Event()
+    download = web_article.scarica
+    def lento(*args, **kwargs):
+        started.set()
+        assert finish.wait(10)
+        return download(*args, **kwargs)
+    monkeypatch.setattr(web_article, 'scarica', lento)
+    c, h, jobs, _, _ = ambiente
+    try:
+        assert c.post(f'/api/jobs/{id}/immagine_url', json={'numero':'1','url':'https://publisher.example/fig.png'}, headers=h).status_code == 200
+        assert started.wait(5)
+        assert c.post(f'/api/jobs/{id}/figura', json={'numero':'1','scelta':'esclusa'}, headers=h).status_code == 409
+        assert c.post(f'/api/jobs/{id}/immagine_url', json={'numero':'1','url':'https://publisher.example/fig.png'}, headers=h).status_code == 409
+    finally:
+        finish.set()
+        jobs.futures[id].result(timeout=10)
+
+
+def test_sostituzione_richiede_nuova_conferma_manuale_e_hash(ambiente, documento, monkeypatch):
+    from src import web_article
+    from PIL import Image
+    id, j, md = manuale(ambiente, documento, monkeypatch, verificata=False)
+    azione(ambiente, id, 'immagine_url', numero='1', url='https://publisher.example/fig.png')
+    old = web.leggi_json(j)['figure'][0]['sha256']
+    azione(ambiente, id, 'figura', numero='1', scelta='approvata', conferma_richiamo=True)
+    image = io.BytesIO()
+    Image.new('RGB', (160, 100), 'red').save(image, format='PNG')
+    monkeypatch.setattr(web_article, 'scarica', lambda url, **kw: (image.getvalue(), url, 'image/png'))
+    azione(ambiente, id, 'immagine_url', numero='1', url='https://publisher.example/new.png')
+    assert not web.leggi_json(j)['figure'][0]['selezione_verificata']
+    assert azione(ambiente, id, 'figura', numero='1', scelta='approvata', conferma_richiamo=True, sha256=old).status_code == 409
+    assert azione(ambiente, id, 'figura', numero='1', scelta='approvata').status_code == 409
+    assert azione(ambiente, id, 'figura', numero='1', scelta='approvata', conferma_richiamo=True).status_code == 200

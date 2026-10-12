@@ -88,3 +88,9 @@ input::file-selector-button { font: inherit; border: 0; padding: 6px 12px; margi
   .extract { max-height: 440px; padding: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { button, .button { transition: none; } }
+
+.manual-image { margin: 18px 0; }
+.manual-image form { padding: 12px 0; }
+.manual-image .hint { margin-top: 10px; }
+.manual-check { display: flex; align-items: flex-start; gap: 10px; }
+.manual-check input { flex-shrink: 0; margin-top: 6px; accent-color: var(--accent); }

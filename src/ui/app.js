@@ -5,6 +5,7 @@ const stateNames = {estrazione:'Lettura della fonte', testo_pronto:'Testo da con
 const busyStates = new Set(['estrazione','elaborazione','pubblicazione','recupero_figure']);
 let csrf = '', selected = null, revision = '', model = '', vault = '', pending = false, polling = false;
 let listMarkup = '', renderVersion = 0, connectionNotice = false;
+const imageDrafts = new Map();
 async function api(path, options = {}) {
   const response = await fetch(path, {...options, headers: {'X-CSRF-Token': csrf, ...(options.headers || {})}});
   const data = await response.json();
@@ -49,9 +50,10 @@ async function refreshList() {
 }
 async function action(jobId, name, data = {}) {
   if (pending || selected !== jobId) return;
+  if (name === 'immagine_url') imageDrafts.set(`${jobId}:${data.numero}`, data.url);
   pending = true; notice('');
   document.querySelectorAll('#content button').forEach(b => b.disabled = true);
-  try { await api(`/api/jobs/${jobId}/${name}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); revision = ''; await refresh(); }
+  try { await api(`/api/jobs/${jobId}/${name}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); if (name === 'immagine_url') imageDrafts.delete(`${jobId}:${data.numero}`); revision = ''; await refresh(); }
   catch(error) { notice(error.message); revision = ''; await refresh(); }
   finally { pending = false; }
 }
@@ -67,7 +69,7 @@ function renderJob(job) {
   let html = `<p class="hint saved-name">${esc(job.nome)}</p>`;
   if (job.errore) html += `<div class="warning" role="alert">${esc(job.errore)}</div>`;
   if (busy) {
-    const copy = job.stato === 'estrazione' ? 'Estraggo testo, tabelle e metadati bibliografici.' : job.stato === 'elaborazione' ? 'Il modello sta preparando la nota. Gli articoli lunghi possono richiedere diversi minuti.' : job.stato === 'pubblicazione' ? 'Carico le immagini e la nota, poi verifico il contenuto sul vault.' : 'Riprovo il recupero degli originali senza chiamare il modello.';
+    const copy = job.stato === 'estrazione' ? 'Estraggo testo, tabelle e metadati bibliografici.' : job.stato === 'elaborazione' ? 'Il modello sta preparando la nota. Gli articoli lunghi possono richiedere diversi minuti.' : job.stato === 'pubblicazione' ? 'Carico le immagini e la nota, poi verifico il contenuto sul vault.' : job.ultima_azione === 'immagine_url' ? 'Scarico l’immagine dal link e preparo l’anteprima, senza chiamare il modello.' : 'Riprovo il recupero degli originali senza chiamare il modello.';
     html += `<section class="panel busy" aria-busy="true"><h1>${esc(stateNames[job.stato])}</h1><p>${copy}</p><p class="hint">Puoi chiudere questa pagina. Lascia aperto il servizio Paper Vault sul Mac.</p></section>`;
   } else if (job.stato === 'testo_pronto') {
     html += `<section class="panel"><h1>Controlla la fonte</h1><p class="muted">Verifica che il testo sia completo e leggibile, soprattutto tabelle, dosaggi e unità di misura.</p>${sourceText(job)}${warning(job)}
@@ -81,10 +83,23 @@ function renderJob(job) {
       const remaining = job.figure.filter(f => !['approvata','esclusa'].includes(f.stato)).length;
       html += `<h1>Rivedi la nota</h1><p class="muted">${job.figure.length ? `${remaining} ${remaining === 1 ? 'figura' : 'figure'} da decidere. Controlla completezza e corrispondenza con il passaggio della fonte.` : 'Nessuna figura selezionata. Controlla la nota prima di pubblicarla.'}</p>`;
       for (const f of job.figure) {
+        const manualAttempt = job.immagine_manuale?.numero === f.numero ? job.immagine_manuale : null;
+        const manualCheck = f.immagine && f.origine_immagine === 'url_manuale' && !f.selezione_verificata;
+        const inputId = `image-url-${f.numero}`;
         html += `<article class="figure"><header><h2>Figura ${esc(f.numero)}</h2><span class="status ${f.stato === 'approvata' ? 'ok' : ''}">${esc({approvata:'Approvata',esclusa:'Esclusa',da_verificare:'Da verificare',non_disponibile:'Non disponibile'}[f.stato])}</span></header><p class="hint">Nella sezione: ${esc(f.sezione_nota)}</p><blockquote>${esc(f.passaggio_fonte)}</blockquote>
           ${f.immagine ? `<a href="${esc(f.immagine)}" target="_blank" rel="noopener"><img src="${esc(f.immagine)}" alt="Figura ${esc(f.numero)}: originale da verificare" loading="lazy"></a><p class="hint">Apri l’immagine per ingrandirla.</p>` : ''}
           <p class="caption">${esc(f.didascalia || '')}</p>${f.problema && f.stato === 'non_disponibile' ? `<p class="warning">${esc(f.problema)}</p>` : ''}
-          <div class="actions"><button class="${f.stato === 'approvata' ? '' : 'primary'}" data-figure="${esc(f.numero)}" data-choice="approvata" ${!f.immagine || f.stato === 'approvata' ? 'disabled' : ''}>${f.stato === 'approvata' ? 'Approvata' : 'Approva figura'}</button><button data-figure="${esc(f.numero)}" data-choice="esclusa" ${f.stato === 'esclusa' ? 'disabled' : ''}>${f.stato === 'esclusa' ? 'Esclusa' : 'Escludi'}</button></div></article>`;
+          ${f.origine_immagine === 'url_manuale' ? '<p class="hint">Immagine recuperata dal link manuale. Controllala prima di approvarla.</p>' : ''}
+          ${manualCheck ? `<div class="warning"><p>Il richiamo non è stato verificato automaticamente: ${esc(f.problema_selezione || '')}</p><label class="manual-check"><input type="checkbox" id="confirm-${esc(f.numero)}"> Ho verificato nell’articolo che questa figura corrisponde al passaggio citato e alla sezione della nota.</label></div>` : ''}
+          <details class="manual-image" ${!f.immagine || manualAttempt ? 'open' : ''}><summary>${f.immagine ? 'Usa un’altra immagine tramite link' : 'Inserisci il link dell’immagine'}</summary>
+            <form data-image-form="${esc(f.numero)}"><label class="field" for="${esc(inputId)}">Link diretto alla figura ${esc(f.numero)}</label>
+              <input id="${esc(inputId)}" name="image-url" type="url" required maxlength="8192" placeholder="https://…/figura.png" value="${esc(imageDrafts.get(`${job.id}:${f.numero}`) ?? manualAttempt?.url ?? f.url_manuale ?? '')}" aria-describedby="hint-${esc(inputId)}">
+              <p class="hint" id="hint-${esc(inputId)}">Apri l’immagine sul sito dell’editore e copia il suo indirizzo. PNG, JPEG o WebP, fino a 25 MB. Il link viene scaricato sul Mac; poi potrai vedere l’anteprima e approvarla.</p>
+              ${manualAttempt && job.errore ? `<p class="warning" role="alert">${esc(job.errore)} Controlla il link diretto e riprova.</p>` : ''}
+              <button type="submit">Carica anteprima</button>
+            </form>
+          </details>
+          <div class="actions"><button class="${f.stato === 'approvata' ? '' : 'primary'}" data-figure="${esc(f.numero)}" data-sha256="${esc(f.sha256 || '')}" data-choice="approvata" ${!f.immagine || f.stato === 'approvata' ? 'disabled' : ''}>${f.stato === 'approvata' ? 'Approvata' : 'Approva figura'}</button><button data-figure="${esc(f.numero)}" data-choice="esclusa" ${f.stato === 'esclusa' ? 'disabled' : ''}>${f.stato === 'esclusa' ? 'Esclusa' : 'Escludi'}</button></div></article>`;
       }
       if (job.fonte_web && job.figure.some(f => f.stato === 'non_disponibile')) html += '<button data-action="riprova_figure">Riprova le immagini mancanti</button>';
       if (!job.pronto && !job.figure.length) html += '<p class="warning">La preparazione delle figure è stata interrotta.</p><button data-action="genera">Riprendi la preparazione</button>';
@@ -101,7 +116,14 @@ function renderJob(job) {
   $('content').innerHTML = html;
   $('announcer').textContent = stateNames[job.stato] || job.stato;
   document.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', () => action(job.id, b.dataset.action)));
-  document.querySelectorAll('[data-figure]').forEach(b => b.addEventListener('click', () => action(job.id, 'figura', {numero:b.dataset.figure, scelta:b.dataset.choice})));
+  document.querySelectorAll('[data-figure]').forEach(b => b.addEventListener('click', () => action(job.id, 'figura', {numero:b.dataset.figure, scelta:b.dataset.choice, sha256:b.dataset.sha256, conferma_richiamo:$(`confirm-${b.dataset.figure}`)?.checked === true})));
+  document.querySelectorAll('[data-image-form]').forEach(form => {
+    form.elements.namedItem('image-url').addEventListener('input', event => imageDrafts.set(`${job.id}:${form.dataset.imageForm}`, event.target.value));
+    form.addEventListener('submit', event => {
+    event.preventDefault();
+    action(job.id, 'immagine_url', {numero:form.dataset.imageForm, url:form.elements.namedItem('image-url').value.trim()});
+    });
+  });
   $('replace-note')?.addEventListener('click', () => action(job.id, 'pubblica', {sostituisci:true}));
   if ($('preview')) api(`/api/jobs/${job.id}/preview`).then(data => { if (selected === job.id && version === renderVersion && $('preview')) $('preview').innerHTML = data.html; }).catch(e => notice(e.message));
 }

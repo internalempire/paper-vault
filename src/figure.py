@@ -228,7 +228,8 @@ def aggiungi_al_markdown(testo: str, figure: list[dict]) -> str:
         # La didascalia è testo originale, non istruzioni markdown/HTML.
         didascalia = html.escape(f.get("didascalia", f"Figura {numero}"))
         didascalia = re.sub(r"([\\`*\[\]_])", r"\\\1", didascalia)
-        origine = (f"pagina PDF {f['pagina_pdf']}" if "pagina_pdf" in f else "dal full-text web")
+        origine = ("da link fornito manualmente" if f.get("origine_immagine") == "url_manuale"
+                   else f"pagina PDF {f['pagina_pdf']}" if "pagina_pdf" in f else "dal full-text web")
         blocco = (f"<!-- paper-pipeline:figura {numero} -->\n"
                   f"![Figura {numero}]({f['percorso']})\n\n"
                   f"{didascalia}\n\n*Figura originale, {origine}.*\n"

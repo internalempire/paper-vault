@@ -119,7 +119,7 @@ class Lavori:
             self.avvia(id, "estrai")
             return self.leggi(id)
 
-    def avvia(self, id, azione, *, sostituisci=False):
+    def avvia(self, id, azione, *, sostituisci=False, numero=None, url=None):
         with self.lock:
             job = self.leggi(id)
             if job["stato"] in BUSY:
@@ -146,6 +146,24 @@ class Lavori:
                     raise ValueError("Approva o escludi tutte le figure prima di pubblicare.")
                 stato = "pubblicazione"
                 lavoro = lambda j: self._pubblica(j, sostituisci=sostituisci)
+            elif azione == "immagine_url":
+                if not job.get("slug") or job["stato"] == "pubblicato":
+                    raise ValueError("Apri una nota ancora da pubblicare.")
+                if not isinstance(url, str) or not url.strip() or len(url) > 8192:
+                    raise ValueError("Inserisci il link diretto a un’immagine PNG, JPEG o WebP.")
+                url = url.strip()
+                parsed = urlsplit(url)
+                if parsed.scheme not in ("https", "http") or not parsed.hostname or parsed.username or parsed.password:
+                    raise ValueError("Serve un link HTTP(S) senza credenziali.")
+                j, md = self.paths(job)
+                f = next((f for f in leggi_json(j).get("figure", []) if f["numero"] == numero), None)
+                if f is None:
+                    raise ValueError("Figura non trovata nella nota.")
+                # Il link sostituisce la risorsa, mai la collocazione scelta nella sintesi.
+                self._verifica_sezione(f, md)
+                job["immagine_manuale"] = {"numero": numero, "url": url}
+                stato = "recupero_figure"
+                lavoro = lambda j: self._immagine_url(j, numero, url)
             elif azione == "riprova_figure":
                 if not job.get("slug") or job["stato"] == "pubblicato":
                     raise ValueError("Nessuna figura da recuperare.")
@@ -228,7 +246,37 @@ class Lavori:
             return False
         return md.is_file() and all(f["stato"] in ("approvata", "esclusa") for f in data.get("figure", []))
 
-    def decidi(self, id, numero, scelta):
+    @staticmethod
+    def _verifica_sezione(f, md):
+        if figure.TITOLI.findall(md.read_text(encoding="utf-8")).count(f["sezione_nota"]) != 1 or f["sezione_nota"] == "Riferimento bibliografico":
+            raise ValueError("La sezione della nota è assente o ambigua: il solo link non può correggerla.")
+
+    def _immagine_url(self, job, numero, url):
+        from src.web_article import salva_immagine
+        j, md = self.paths(job)
+        data = leggi_json(j)
+        originale = next(f for f in data["figure"] if f["numero"] == numero)
+        nuova = dict(originale)
+        nuova["url_immagini"] = [url]
+        # Il downloader controlla URL, redirect, dimensioni e formato effettivo.
+        # La figura precedente resta intatta se il download fallisce.
+        salva_immagine(nuova, md.parent, job["slug"])
+        for key in ("pagina_pdf", "bbox", "bbox_didascalia"):
+            nuova.pop(key, None)
+        nuova.update(origine_immagine="url_manuale", url_manuale=url)
+        if not originale.get("selezione_verificata") or originale.get("verifica_selezione") == "manuale":
+            nuova["selezione_verificata"] = False
+            nuova.pop("verifica_selezione", None)
+            nuova["problema_selezione"] = originale.get("problema_selezione") or originale.get("problema", "Richiamo non verificato automaticamente.")
+        originale.clear()
+        originale.update(nuova)
+        scrivi_json(j, data)
+        self._rigenera(job)
+        job.update(stato="revisione", errore=None)
+        job.pop("immagine_manuale", None)
+        self.salva(job)
+
+    def decidi(self, id, numero, scelta, *, conferma_richiamo=False, sha256=None):
         with self.lock:
             job = self.leggi(id)
             if job["stato"] in BUSY or job["stato"] == "pubblicato":
@@ -240,9 +288,16 @@ class Lavori:
             f = next((f for f in data.get("figure", []) if f["numero"] == numero), None)
             if not f:
                 raise ValueError("Figura non trovata.")
+            if scelta == "approvata" and (not sha256 or sha256 != f.get("sha256")):
+                raise ValueError("L’immagine è cambiata: controlla la nuova anteprima prima di approvarla.")
             if scelta in ("approvata", "da_verificare"):
-                if not f.get("selezione_verificata") or not f.get("percorso"):
-                    raise ValueError("Manca un’immagine verificabile. Puoi escluderla oppure riprovare il recupero.")
+                if not f.get("selezione_verificata"):
+                    if f.get("origine_immagine") != "url_manuale" or not conferma_richiamo:
+                        raise ValueError("Conferma di aver verificato sulla fonte il richiamo e la corrispondenza della figura.")
+                    self._verifica_sezione(f, md)
+                    f.update(selezione_verificata=True, verifica_selezione="manuale")
+                if not f.get("percorso"):
+                    raise ValueError("Manca un’immagine verificabile. Inserisci un link oppure riprova il recupero.")
                 img = figure.percorso_sicuro(self.config_lavoro(id).note, f["percorso"])
                 if not img.exists() or hashlib.sha256(img.read_bytes()).hexdigest() != f.get("sha256"):
                     raise ValueError("L’immagine è assente o cambiata rispetto all’estrazione.")
@@ -398,9 +453,11 @@ def crea_app(conf=None, *, root=None, estrattore=None, vault_factory=None):
     def azione(id, azione):
         data = request.get_json(silent=True) or {}
         if azione == "figura":
-            lavori.decidi(id, str(data.get("numero")), data.get("scelta"))
+            lavori.decidi(id, str(data.get("numero")), data.get("scelta"),
+                          conferma_richiamo=data.get("conferma_richiamo") is True, sha256=data.get("sha256"))
         else:
-            lavori.avvia(id, azione, sostituisci=data.get("sostituisci") is True)
+            lavori.avvia(id, azione, sostituisci=data.get("sostituisci") is True,
+                         numero=str(data.get("numero")), url=data.get("url"))
         return jsonify(ok=True)
 
     @app.get("/api/jobs/<id>/asset/<path:nome>")
